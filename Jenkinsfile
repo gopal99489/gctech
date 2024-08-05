@@ -6,6 +6,11 @@ pipeline {
         maven 'Maven'
     }
 
+    environment {
+        NEXUS_URL = 'http://34.100.152.179:8081/repository/gopal/'
+        NEXUS_CREDENTIALS_ID = 'nexus-cred'
+    }
+
     stages {
         stage('SCM') {
             steps {
@@ -42,10 +47,26 @@ pipeline {
                 sh 'mvn clean install'
             }
         }
-         stage('Deploy to Tomcat') {
+        stage('Upload WAR to Nexus') {
             steps {
-                sh 'sudo cp /var/lib/jenkins/workspace/gopal/target/vamsi.war /opt/tomcats/tomcat10/webapps/'
+                script {
+                    echo 'Uploading WAR file to Nexus...'
+                    withCredentials([usernamePassword(credentialsId: NEXUS_CREDENTIALS_ID, usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PASS')]) {
+                        sh "curl -v -u ${NEXUS_USER}:${NEXUS_PASS} --upload-file /var/lib/jenkins/workspace/gopal/target/*.war ${NEXUS_URL}"
+                    }
+                }
+            }
+        }
+        stage('Deploy to Tomcat') {
+            when {
+                expression {
+                    return currentBuild.result == null || currentBuild.result == 'SUCCESS'
+                }
+            }
+            steps {
+                sh 'sudo cp /var/lib/jenkins/workspace/gopal/target/*.war /opt/tomcats/tomcat10/webapps/'
             }
         }
     }
 }
+
