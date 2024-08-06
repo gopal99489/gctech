@@ -7,7 +7,7 @@ pipeline {
     }
 
     environment {
-        NEXUS_URL = 'http://34.100.152.179:8081/repository/gopal/'
+        NEXUS_URL = 'http://34.93.240.63:8081/repository/gopal/'
         NEXUS_CREDENTIALS_ID = 'nexus-cred'
     }
 
@@ -24,7 +24,7 @@ pipeline {
         }
         stage('SonarQube analysis') {
             environment {
-                SONAR_HOST_URL = 'http://34.100.152.179:9000'
+                SONAR_HOST_URL = 'http://34.93.240.63:9000'
                 SONAR_TOKEN = 'sqp_a8a95ab040733fa92b550d62ce3fdbd6af5094ff'
             }
             steps {
