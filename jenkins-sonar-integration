@@ -11,7 +11,7 @@ pipeline {
       steps {
         git branch: 'Dev',
             credentialsId: 'github-gopal', // remove this line if repo is public
-            url: 'https://github.com/spoors/EFFORT-Web.git'
+            url: 'https://github.com/gopal99489/gctech.git'
       }
     }
 
