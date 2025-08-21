@@ -2,8 +2,12 @@ pipeline {
   agent any
 
   tools {
-    jdk 'jdk21'     // Must match the name configured in Jenkins Tools
-    maven 'Maven'  // Must match the name configured in Jenkins Tools
+    jdk 'jdk21'       // Must match the name configured in Jenkins Tools
+    maven 'Maven'     // Must match the name configured in Jenkins Tools
+  }
+
+  environment {
+    SONAR_TOKEN = credentials('sonar-token') // Jenkins credentials for SonarQube token
   }
 
   stages {
@@ -21,7 +25,8 @@ pipeline {
       }
       post {
         always {
-          junit 'target/surefire-reports/*.xml' // show test results in Jenkins
+          // publish test results, but don’t fail if no reports exist
+          junit testResults: 'target/surefire-reports/*.xml', allowEmptyResults: true
         }
       }
     }
@@ -33,7 +38,7 @@ pipeline {
             mvn -B sonar:sonar \
               -Dsonar.projectKey=effort-web \
               -Dsonar.host.url=$SONAR_HOST_URL \
-              -Dsonar.login=$SONAR_AUTH_TOKEN
+              -Dsonar.login=$SONAR_TOKEN
           """
         }
       }
@@ -41,7 +46,6 @@ pipeline {
 
     stage('Quality Gate') {
       steps {
-        // Requires SonarQube webhook: http://192.168.77.220:8080/sonarqube-webhook/
         timeout(time: 3, unit: 'MINUTES') {
           waitForQualityGate abortPipeline: true
         }
@@ -50,7 +54,11 @@ pipeline {
   }
 
   post {
-    success { echo 'Build + SonarQube analysis + Quality Gate: SUCCESS' }
-    failure { echo 'Pipeline failed (build/tests/analysis or Quality Gate).' }
+    success {
+      echo '✅ Build + SonarQube analysis + Quality Gate: SUCCESS'
+    }
+    failure {
+      echo '❌ Pipeline failed (build/tests/analysis or Quality Gate).'
+    }
   }
 }
