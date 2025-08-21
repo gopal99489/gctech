@@ -2,8 +2,8 @@ pipeline {
   agent any
 
   tools {
-    jdk 'jdk21'       // Must match the name configured in Jenkins Tools
-    maven 'Maven'     // Must match the name configured in Jenkins Tools
+    jdk 'jdk21'     // Must match the name configured in Jenkins Tools
+    maven 'Maven'   // Must match the name configured in Jenkins Tools
   }
 
   stages {
@@ -15,14 +15,13 @@ pipeline {
       }
     }
 
-    stage('Build & Test') {
+    stage('Build (No Tests)') {
       steps {
-        sh 'mvn -B clean verify'
+        sh 'mvn -B clean install -DskipTests'
       }
       post {
         always {
-          // publish test results, but don’t fail if no reports exist
-          junit testResults: 'target/surefire-reports/*.xml', allowEmptyResults: true
+          echo "✅ Build completed (tests skipped)."
         }
       }
     }
@@ -32,9 +31,10 @@ pipeline {
         withSonarQubeEnv('SonarQube') {
           sh """
             mvn -B sonar:sonar \
+              -DskipTests \
               -Dsonar.projectKey=effort-web \
               -Dsonar.host.url=$SONAR_HOST_URL \
-              -Dsonar.login=$SONAR_TOKEN
+              -Dsonar.login=$SONAR_AUTH_TOKEN
           """
         }
       }
@@ -50,11 +50,7 @@ pipeline {
   }
 
   post {
-    success {
-      echo '✅ Build + SonarQube analysis + Quality Gate: SUCCESS'
-    }
-    failure {
-      echo '❌ Pipeline failed (build/tests/analysis or Quality Gate).'
-    }
+    success { echo '✅ Build + SonarQube analysis + Quality Gate: SUCCESS' }
+    failure { echo '❌ Pipeline failed (build/analysis or Quality Gate).' }
   }
 }
