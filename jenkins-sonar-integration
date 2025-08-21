@@ -6,10 +6,6 @@ pipeline {
     maven 'Maven'     // Must match the name configured in Jenkins Tools
   }
 
-  environment {
-    SONAR_TOKEN = credentials('sonar-token') // Jenkins credentials for SonarQube token
-  }
-
   stages {
     stage('Checkout') {
       steps {
