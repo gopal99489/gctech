@@ -1,0 +1,60 @@
+pipeline {
+    agent any
+
+    tools {
+        maven 'Maven'   // Name from Jenkins Global Tool Configuration
+    }
+
+    environment {
+        // Jenkins credentials: Manage Jenkins → Credentials
+        GITHUB_CREDS = 'github-creds'     // your GitHub credentials ID
+        SONARQUBE_SERVER = 'SonarQube'    // the SonarQube server name in Jenkins
+        SONARQUBE_TOKEN = credentials('sonar-token') // your Sonar token stored in Jenkins
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main',
+                    url: 'https://github.com/<your-org>/<your-repo>.git',
+                    credentialsId: "${GITHUB_CREDS}"
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv("${SONARQUBE_SERVER}") {
+                    sh '''
+                        mvn clean verify sonar:sonar \
+                          -Dsonar.projectKey=my-project \
+                          -Dsonar.host.url=$SONAR_HOST_URL \
+                          -Dsonar.login=$SONAR_AUTH_TOKEN
+                    '''
+                }
+            }
+        }
+
+        stage('Archive Reports') {
+            steps {
+                sh 'mkdir -p sonar-reports'
+                sh 'cp -r target/site sonar-reports/ || true'
+                archiveArtifacts artifacts: 'sonar-reports/**', fingerprint: true
+            }
+        }
+
+        stage('Send Email') {
+            steps {
+                emailext(
+                    subject: "SonarQube Report - ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                    body: """<p>Hello Team,</p>
+                             <p>The SonarQube scan has completed for <b>${env.JOB_NAME} #${env.BUILD_NUMBER}</b>.</p>
+                             <p>You can view the Jenkins build details <a href="${env.BUILD_URL}">here</a>.</p>
+                             <p>The scan reports are attached.</p>""",
+                    to: "team@example.com",
+                    attachmentsPattern: "sonar-reports/**"
+                )
+            }
+        }
+    }
+}
+
