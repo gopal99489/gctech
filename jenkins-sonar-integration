@@ -9,7 +9,7 @@ pipeline {
   stages {
     stage('Checkout') {
       steps {
-        git branch: 'Dev',
+        git branch: 'dev',
             credentialsId: 'github-gopal', // remove this line if repo is public
             url: 'https://github.com/gopal99489/gctech.git'
       }
