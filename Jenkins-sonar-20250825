@@ -19,33 +19,33 @@ pipeline {
             }
         }
 
-        stage('Ensure SonarQube Webhook') {
-            steps {
-                withCredentials([string(credentialsId: 'sonar-jenkins-gc', variable: 'SONAR_TOKEN')]) {
-                    script {
-                        def webhookExists = sh(
-                            script: '''
-                                curl -s -u $SONAR_TOKEN: \
-                                $SONARQUBE_URL/api/webhooks/list | \
-                                grep -q "$JENKINS_WEBHOOK_URL"
-                            ''',
-                            returnStatus: true
-                        )
-                        if (webhookExists != 0) {
-                            echo "Webhook not found. Creating new webhook..."
-                            sh '''
-                                curl -s -u $SONAR_TOKEN: \
-                                -X POST $SONARQUBE_URL/api/webhooks/create \
-                                -d name=Jenkins \
-                                -d url=$JENKINS_WEBHOOK_URL
-                            '''
-                        } else {
-                            echo "Webhook already exists. Skipping creation."
-                        }
-                    }
-                }
-            }
-        }
+//        stage('Ensure SonarQube Webhook') {
+//           steps {
+//               withCredentials([string(credentialsId: 'sonar-jenkins-gc', variable: 'SONAR_TOKEN')]) {
+//                    script {
+//                        def webhookExists = sh(
+//                            script: '''
+//                                curl -s -u $SONAR_TOKEN: \
+//                                $SONARQUBE_URL/api/webhooks/list | \
+//                                grep -q "$JENKINS_WEBHOOK_URL"
+//                            ''',
+//                            returnStatus: true
+//                        )
+//                        if (webhookExists != 0) {
+//                            echo "Webhook not found. Creating new webhook..."
+//                            sh '''
+//                                curl -s -u $SONAR_TOKEN: \
+//                                -X POST $SONARQUBE_URL/api/webhooks/create \
+//                                -d name=Jenkins \
+//                                -d url=$JENKINS_WEBHOOK_URL
+//                            '''
+//                        } else {
+//                            echo "Webhook already exists. Skipping creation."
+//                        }
+//                    }
+//                }
+//            }
+//        }
 
         stage('SonarQube Scan') {
             steps {
