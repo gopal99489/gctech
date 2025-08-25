@@ -1,0 +1,68 @@
+pipeline {
+    agent any
+
+    environment {
+        SONARQUBE_SERVER = 'sonarqube'  // Name from Jenkins config
+        SONARQUBE_PROJECT_KEY = 'sonar-jenkins-integration'
+        SONARQUBE_PROJECT_NAME = 'sonar-jenkins-integration'
+        SONARQUBE_TOKEN = credentials('Sonar-token') // SonarQube token stored in Jenkins credentials
+        CNES_CLI_URL = 'https://github.com/cnescatlab/sonar-cnes-report/releases/download/4.2.0/sonar-cnes-report-4.2.0.jar'
+        REPORT_FILE = 'sonarqube-report.pdf'
+        EMAIL_RECIPIENT = 'gopalarao.jonnakuti@spoors.in'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'dev', url: 'https://github.com/gopal99489/gctech.git'
+            }
+        }
+
+        stage('SonarQube Scan') {
+            steps {
+                script {
+                    withSonarQubeEnv(SONARQUBE_SERVER) {
+                        sh '''
+                        mvn clean verify sonar:sonar \
+                          -Dsonar.projectKey=$SONARQUBE_PROJECT_KEY \
+                          -Dsonar.projectName=$SONARQUBE_PROJECT_NAME \
+                          -Dsonar.login=$SONARQUBE_TOKEN
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Wait for Quality Gate') {
+            steps {
+                timeout(time: 5, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
+            }
+        }
+
+        stage('Generate SonarQube PDF Report') {
+            steps {
+                sh '''
+                curl -L -o cnes-cli.jar $CNES_CLI_URL
+                java -jar cnes-cli.jar \
+                  -s http://34.93.120.216:9000/ \
+                  -t $SONARQUBE_TOKEN \
+                  -p $SONARQUBE_PROJECT_KEY \
+                  -f $REPORT_FILE
+                '''
+            }
+        }
+
+        stage('Send Report via Email') {
+            steps {
+                emailext (
+                    subject: "SonarQube Vulnerability Report for ${env.SONARQUBE_PROJECT_NAME}",
+                    body: "Attached is the SonarQube vulnerability report for your project.",
+                    to: "${EMAIL_RECIPIENT}",
+                    attachmentsPattern: "${REPORT_FILE}"
+                )
+            }
+        }
+    }
+}
