@@ -10,7 +10,7 @@ pipeline {
         REPORT_FILE = 'sonarqube-report.pdf'
         EMAIL_RECIPIENT = 'gopalarao.jonnakuti@spoors.in'
         SONARQUBE_URL = 'http://34.93.120.216:9000'
-        JENKINS_WEBHOOK_URL = 'http://34.93.120.216:8080/sonarqube-webhook/' // Replace with your actual Jenkins webhook endpoint
+        JENKINS_WEBHOOK_URL = 'http://192.168.77.220:8080/sonarqube-webhook/' // Replace with your actual Jenkins webhook endpoint
     }
 
     stages {
