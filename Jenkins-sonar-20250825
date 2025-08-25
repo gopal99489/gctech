@@ -9,12 +9,27 @@ pipeline {
         CNES_CLI_URL = 'https://github.com/cnescatlab/sonar-cnes-report/releases/download/4.2.0/sonar-cnes-report-4.2.0.jar'
         REPORT_FILE = 'sonarqube-report.pdf'
         EMAIL_RECIPIENT = 'gopalarao.jonnakuti@spoors.in'
+        SONARQUBE_URL = 'http://34.93.120.216:9000'
+        JENKINS_WEBHOOK_URL = 'http://34.93.120.216/sonarqube-webhook/' // Replace with actual Jenkins URL
     }
 
     stages {
         stage('Checkout') {
             steps {
                 git branch: 'dev', url: 'https://github.com/gopal99489/gctech.git'
+            }
+        }
+
+        stage('Ensure SonarQube Webhook') {
+            steps {
+                script {
+                    // Optional: Create webhook if not already configured
+                    sh """
+                    curl -s -u ${SONARQUBE_TOKEN}: \\
+                    -X POST "${SONARQUBE_URL}/api/webhooks/create" \\
+                    -d "name=Jenkins&url=${JENKINS_WEBHOOK_URL}" || true
+                    """
+                }
             }
         }
 
@@ -46,7 +61,7 @@ pipeline {
                 sh '''
                 curl -L -o cnes-cli.jar $CNES_CLI_URL
                 java -jar cnes-cli.jar \
-                  -s http://34.93.120.216:9000/ \
+                  -s $SONARQUBE_URL \
                   -t $SONARQUBE_TOKEN \
                   -p $SONARQUBE_PROJECT_KEY \
                   -f $REPORT_FILE
